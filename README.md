@@ -438,12 +438,7 @@ This project is licensed under the **ISC License** - see the LICENSE file for de
 
 ## 🙋 Support & Questions
 
-- 📧 Email: support@ailearning.com
-- 💬 Discord: [Join our community](https://discord.gg/ailearning)
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/ai-learning-assistant/issues)
-- 📖 Documentation: [Full Docs](https://docs.ailearning.com)
-
----
+- 📧 Email: sidhdeshshrivastav@gmail.com
 
 ## 🎉 Acknowledgments
 
@@ -458,6 +453,6 @@ This project is licensed under the **ISC License** - see the LICENSE file for de
 
 ### ⭐ If you find this project helpful, please give it a star!
 
-**Built with ❤️ by the AI Learning Assistant Team**
+**Built with Sidhdesh Srivastava ❤️ by the AI Learning Assistant Team**
 
 </div>
