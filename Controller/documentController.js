@@ -33,9 +33,8 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    // Local file URL
-    const baseURL = `${process.env.BASE_URL}`;
-    const fileURL = `${baseURL}/uploads/documents/${req.file.filename}`;
+    // Relative file URL (frontend will use its own base URL)
+    const fileURL = `/uploads/documents/${req.file.filename}`;
 
     // Upload to Cloudinary as well
     let cloudinaryURL = null;
