@@ -5,10 +5,10 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
-import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 
 import { ErrorHandler } from "./Middleware/errorHandler.js";
+import { connectDB } from "./config/db_connect.js";
 
 import authrouter from "./Routes/authRoutes.js";
 import documentRouter from "./Routes/documentRoutes.js";
@@ -59,41 +59,6 @@ process.on("unhandledRejection", (err) => {
   console.error("❌ UNHANDLED REJECTION");
   console.error(err);
 });
-
-// ======================================================
-// DATABASE CONNECTION
-// ======================================================
-
-const DB_RETRY_MS = Number(process.env.DB_RETRY_MS || 10000);
-let dbRetryTimer = null;
-
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-
-    console.log("====================================");
-    console.log("✅ MongoDB Connected Successfully");
-    console.log("HOST:", conn.connection.host);
-    console.log("DATABASE:", conn.connection.name);
-    console.log("====================================");
-    if (dbRetryTimer) {
-      clearTimeout(dbRetryTimer);
-      dbRetryTimer = null;
-    }
-  } catch (error) {
-    console.error("====================================");
-    console.error("❌ MongoDB Connection Failed");
-    console.error(error.message);
-    console.error("====================================");
-    if (!dbRetryTimer) {
-      dbRetryTimer = setTimeout(async () => {
-        dbRetryTimer = null;
-        await connectDB();
-      }, DB_RETRY_MS);
-      console.log(`🔁 Retrying DB connection in ${DB_RETRY_MS / 1000}s...`);
-    }
-  }
-};
 
 connectDB();
 
