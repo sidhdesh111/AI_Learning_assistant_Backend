@@ -79,6 +79,10 @@ app.use((req, res) => {
   });
 });
 
+app.get("/", (req, res) => {
+  res.send("AI Learning Assistant Backend Running");
+});
+
 // Error handler (LAST)
 app.use(ErrorHandler);
 
