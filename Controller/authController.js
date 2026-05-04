@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import { validationResult } from "express-validator";
 import UserModel from "../Model/User.Model.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../Middleware/Claudinary.js";
@@ -62,6 +63,8 @@ const clearTokenCookies = (res) => {
         sameSite: "strict"
     });
 };
+
+const isDatabaseReady = () => mongoose.connection.readyState === 1;
 
 
 export const registerController = async (req, res) => {
@@ -146,6 +149,14 @@ export const loginController = async (req, res) => {
             errors: errors.array(),
             message: "Validation failed",
             statusCode: 400
+        });
+    }
+    if (!isDatabaseReady()) {
+        return res.status(503).json({
+            success: false,
+            message: "Database temporarily unavailable. Please try again.",
+            errors: [{ msg: "Database connection is not ready" }],
+            statusCode: 503
         });
     }
     const { email, password, rememberMe } = req.body;
