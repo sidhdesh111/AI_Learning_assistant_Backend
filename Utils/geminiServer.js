@@ -1,5 +1,11 @@
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+import {
+    filterDuplicateFlashcards,
+    filterDuplicateQuestions,
+    cacheFlashcard,
+    cacheQuizQuestion
+} from "./deduplicationAgent.js";
 
 dotenv.config();
 
@@ -12,7 +18,7 @@ if (!process.env.GEMINI_API_KEY) {
     process.exit(1);
 }
 
-export const generatingFlashcards = async (text, count = 10) => {
+export const generatingFlashcards = async (text, count = 10, userId = null, documentId = null) => {
     const prompt = `You are an expert educator. Generate exactly ${count} educational flashcards STRICTLY from the following document content.
 
 **CRITICAL REQUIREMENTS - READ CAREFULLY:**
@@ -25,6 +31,7 @@ export const generatingFlashcards = async (text, count = 10) => {
 - DO NOT ask meta-questions about the document (purpose, author, disclaimer, origins)
 - ONLY ask about the ACTUAL CONTENT - the real knowledge, concepts, facts, and ideas taught in the text
 - Every question must be answerable by extracting factual information from the provided text
+- IMPORTANT: Generate DIVERSE and UNIQUE questions - avoid repetition and similar concepts
 
 **Example GOOD questions:** "What is a variable?", "How do closures work?", "Define a callback function", "What are the data types in JavaScript?"
 **Example BAD questions:** "What chapter discusses variables?", "What section covers DOM API?", "What is the topic of Chapter 3?"
@@ -87,14 +94,28 @@ ${text.substring(0, 15000)}`;
                 });
             }
         }
-        return flashcards;
+
+        // Apply deduplication if userId and documentId are provided
+        let finalFlashcards = flashcards;
+        if (userId && documentId) {
+            console.log(`Checking for duplicate flashcards... (Found ${flashcards.length} initial cards)`);
+            finalFlashcards = await filterDuplicateFlashcards(userId, documentId, flashcards);
+            console.log(`After deduplication: ${finalFlashcards.length} unique cards (Filtered ${flashcards.length - finalFlashcards.length} duplicates)`);
+
+            // Cache the unique flashcards
+            for (const flashcard of finalFlashcards) {
+                await cacheFlashcard(userId, documentId, flashcard.question, flashcard.answer, flashcard.difficulty);
+            }
+        }
+
+        return finalFlashcards;
     } catch (error) {
         console.error("Error generating flashcards:", error);
         throw error;
     }
 };
 
-export const generatingQuiz = async (text, numQuestions = 50) => {
+export const generatingQuiz = async (text, numQuestions = 50, userId = null, documentId = null) => {
     const prompt = `You are an expert educator creating a knowledge assessment quiz. Generate exactly ${numQuestions} multiple-choice questions STRICTLY from the following document content.
 
 **CRITICAL REQUIREMENTS - READ CAREFULLY:**
@@ -108,6 +129,7 @@ export const generatingQuiz = async (text, numQuestions = 50) => {
 - ONLY ask about the ACTUAL CONTENT - the real knowledge, concepts, facts, and ideas taught in the text
 - Every question must be answerable by extracting factual information from the provided text
 - Ensure all options are plausible and the correct answer is clearly determinable from the text
+- IMPORTANT: Generate DIVERSE and UNIQUE questions - avoid repetition and similar concepts
 
 **Example GOOD questions:** "What is a closure?", "How do variables work?", "What are event listeners?", "Define a Promise in JavaScript"
 **Example BAD questions:** "What chapter discusses closures?", "What section covers variables?", "What is the topic of Chapter 3?"
@@ -180,7 +202,20 @@ ${text.substring(0, 15000)}`;
             }
         }
 
-        return questions;
+        // Apply deduplication if userId and documentId are provided
+        let finalQuestions = questions;
+        if (userId && documentId) {
+            console.log(`Checking for duplicate quiz questions... (Found ${questions.length} initial questions)`);
+            finalQuestions = await filterDuplicateQuestions(userId, documentId, questions);
+            console.log(`After deduplication: ${finalQuestions.length} unique questions (Filtered ${questions.length - finalQuestions.length} duplicates)`);
+
+            // Cache the unique questions
+            for (const q of finalQuestions) {
+                await cacheQuizQuestion(userId, documentId, q.question, q.options, q.correctAnswer, "medium");
+            }
+        }
+
+        return finalQuestions;
     } catch (error) {
         console.error("Error generating quiz:", error);
         throw error;

@@ -32,7 +32,7 @@ export const generateFlashcards = async (req, res, next) => {
       })
     }
 
-    const cards = await generatingFlashcards(document.extractedText, parseInt(count));
+    const cards = await generatingFlashcards(document.extractedText, parseInt(count), req.user._id, document._id);
 
     const flashcardSet = await FlashCardModel.create({
       userId: req.user._id,
@@ -87,7 +87,7 @@ export const generateQuiz = async (req, res, next) => {
     }
 
 
-    const questions = await generatingQuiz(document.extractedText, parseInt(numQuestions));
+    const questions = await generatingQuiz(document.extractedText, parseInt(numQuestions), req.user._id, document._id);
 
     const quiz = await QuizModel.create({
       userId: req.user._id,
