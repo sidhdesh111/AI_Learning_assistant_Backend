@@ -31,8 +31,8 @@ console.log("ENV CHECK");
 console.log("PORT:", process.env.PORT);
 console.log("CLIENT_URL:", process.env.CLIENT_URL);
 console.log(
-  "MONGODB_URI:",
-  process.env.MONGO_URI ? "FOUND ✅" : "MISSING ❌"
+  "MONGODB_URL:",
+  process.env.MONGO_URL ? "FOUND ✅" : "MISSING ❌"
 );
 console.log(
   "JWT_SECRET:",
