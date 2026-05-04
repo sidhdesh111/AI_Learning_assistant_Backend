@@ -5,13 +5,11 @@ import { extractTextFromPDF } from "../Utils/pdfParser.js";
 import { chunkText } from "../Utils/textChunker.js";
 import fs from "fs/promises";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import { processPDF } from "../config/PDFprocess.js";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
 } from "../Middleware/Claudinary.js";
-dotenv.config();
 
 export const uploadDocument = async (req, res, next) => {
   try {

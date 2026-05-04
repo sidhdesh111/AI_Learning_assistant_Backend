@@ -1,7 +1,4 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 // Token configuration
 const ACCESS_TOKEN_EXPIRY = "15m"; // Short-lived access token
