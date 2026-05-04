@@ -24,7 +24,7 @@ const __dirname = path.dirname(__filename);
 // ENV CONFIG
 // ======================================================
 
-dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config({ path: path.join(__dirname, ".env"), debug: false });
 
 console.log("====================================");
 console.log("ENV CHECK");
