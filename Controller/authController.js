@@ -211,8 +211,6 @@ export const loginController = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Login successful",
-            accessToken,
-            refreshToken,
             user: {
                 id: user._id,
                 username: user.username,
@@ -238,11 +236,8 @@ export const loginController = async (req, res) => {
  * Implements token rotation: invalidates old tokens and issues new ones
  */
 export const refreshTokenController = async (req, res) => {
-    // Accept refresh token from cookies or request body
-    const incomingRefreshToken = 
-        req.cookies?.refreshToken || 
-        req.body?.refreshToken ||
-        req.headers?.authorization?.replace("Bearer ", "");
+    // Accept refresh token from secure cookie only
+    const incomingRefreshToken = req.cookies?.refreshToken;
 
     if (!incomingRefreshToken) {
         return res.status(401).json({
@@ -331,8 +326,6 @@ export const refreshTokenController = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Token refreshed successfully",
-            accessToken: newAccessToken,
-            refreshToken: newRefreshToken,
             tokenRotation: true,
             statusCode: 200
         });

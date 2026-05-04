@@ -22,6 +22,11 @@ const DocumentSchema = new mongoose.Schema({
         required: [true, "File path is required"],
         trim: true
     },
+    localFilePath: {
+        type: String,
+        default: null,
+        trim: true
+    },
     cloudinaryUrl: {
         type: String,
         default: null,

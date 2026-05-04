@@ -1,6 +1,7 @@
 import DocumentModel from "../Model/Document.Model.js";
 import { extractTextFromPDF } from "../Utils/pdfParser.js"
 import { chunkText } from "../Utils/textChunker.js";
+import fs from "fs/promises";
 
 export const processPDF = async (documentId, filePath) => {
     try {
@@ -12,7 +13,8 @@ export const processPDF = async (documentId, filePath) => {
         await DocumentModel.findByIdAndUpdate(documentId, {
             extractedText: text,
             chunks: chunks,
-            status: 'ready'
+            status: 'ready',
+            localFilePath: null
         });
 
         console.log(`Document ${documentId} processed successfully.`);
@@ -23,5 +25,9 @@ export const processPDF = async (documentId, filePath) => {
         await DocumentModel.findByIdAndUpdate(documentId, {
             status: 'failed'
         })
+    } finally {
+        if (filePath) {
+            await fs.unlink(filePath).catch(() => {});
+        }
     }
 } 

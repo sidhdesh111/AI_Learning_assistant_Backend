@@ -52,6 +52,7 @@ export const uploadDocument = async (req, res, next) => {
       title,
       fileName: req.file.originalname,
       filePath: fileURL,
+      localFilePath: req.file.path,
       cloudinaryUrl: cloudinaryURL,
       fileSize: req.file.size,
       status: "processing",
@@ -187,7 +188,9 @@ export const deleteDocument = async (req, res, next) => {
       });
     }
 
-    await fs.unlink(document.filePath).catch(() => {});
+    if (document.localFilePath) {
+      await fs.unlink(document.localFilePath).catch(() => {});
+    }
     if (document.cloudinaryUrl) {
       try {
         await deleteFromCloudinary(document.cloudinaryUrl);

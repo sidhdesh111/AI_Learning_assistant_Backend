@@ -1,5 +1,6 @@
 import express from "express";
 import { body, validationResult } from "express-validator";
+import rateLimit from "express-rate-limit";
 import {
   registerController,
   loginController,
@@ -14,6 +15,18 @@ import { protectedMiddleware } from "../Middleware/auth.js";
 import { createUpload } from "../Middleware/MulterMiddleware.js";
 
 const authrouter = express.Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many authentication requests. Please try again later.",
+    statusCode: 429
+  }
+});
 
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -37,15 +50,15 @@ const loginValidation = [
 
 const upload = createUpload("profile-images");
 // ALL Routes
-authrouter.post("/register", upload.single("profilePicture"), validateRegister, handleValidationErrors, registerController);
-authrouter.post("/login", loginValidation, handleValidationErrors, loginController);
+authrouter.post("/register", authLimiter, upload.single("profilePicture"), validateRegister, handleValidationErrors, registerController);
+authrouter.post("/login", authLimiter, loginValidation, handleValidationErrors, loginController);
 
 authrouter.get("/profile", protectedMiddleware, getProfileController);
 authrouter.put("/profile", protectedMiddleware, upload.single("profilePicture"), updateProfileController);
 authrouter.delete("/profile", protectedMiddleware, deleteProfileController);
 
 authrouter.put("/change-password", protectedMiddleware, changePasswordController);
-authrouter.post("/refresh-token", refreshTokenController);
-authrouter.post("/logout", logoutController);
+authrouter.post("/refresh-token", authLimiter, refreshTokenController);
+authrouter.post("/logout", authLimiter, logoutController);
 
 export default authrouter;

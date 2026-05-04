@@ -9,6 +9,7 @@ export const protectedMiddleware = async (req, res, next) => {
     }
 
     const authHeader = req.headers.authorization;
+    const cookieToken = req.cookies?.accessToken;
     
     // console.log("[Auth Middleware]", {
     //     method: req.method,
@@ -17,7 +18,7 @@ export const protectedMiddleware = async (req, res, next) => {
     //     headerValue: authHeader ? authHeader.substring(0, 20) + "..." : "NONE",
     // });
     
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!cookieToken && (!authHeader || !authHeader.startsWith("Bearer "))) {
         console.warn("[Auth Middleware] Missing or invalid Bearer token");
         return res.status(401).json({
             success: false,
@@ -26,7 +27,7 @@ export const protectedMiddleware = async (req, res, next) => {
         });
     }
 
-    const token = authHeader.slice(7); // Remove "Bearer " prefix
+    const token = cookieToken || authHeader.slice(7); // Prefer secure cookie token
     
     try {
         const decoded = verifyToken(token, "access");
@@ -41,6 +42,30 @@ export const protectedMiddleware = async (req, res, next) => {
             });
         }
         
+        if (user.isLoggedOut) {
+            return res.status(401).json({
+                success: false,
+                message: "Session expired. Please login again.",
+                statusCode: 401
+            });
+        }
+
+        if (user.tokenVersion !== decoded.tokenVersion) {
+            return res.status(401).json({
+                success: false,
+                message: "Token has been invalidated. Please login again.",
+                statusCode: 401
+            });
+        }
+
+        if (user.accessToken && user.accessToken !== token) {
+            return res.status(401).json({
+                success: false,
+                message: "Session token mismatch. Please login again.",
+                statusCode: 401
+            });
+        }
+
         req.user = user;
    //     console.log("[Auth Middleware] Token verified successfully for user:", user._id);
         next(); // Continue to next middleware/route

@@ -92,14 +92,10 @@ export const tokenRotationMiddleware = async (req, res, next) => {
                 maxAge: refreshMaxAge
             });
 
-            // Attach new tokens to request for potential use
-            req.newAccessToken = newAccessToken;
-            req.newRefreshToken = newRefreshToken;
             req.tokenRefreshed = true;
 
             // Add token refresh info to response headers
             res.set("X-Token-Refreshed", "true");
-            res.set("X-New-Access-Token", newAccessToken);
 
         } catch (error) {
             // Continue even if token refresh fails
