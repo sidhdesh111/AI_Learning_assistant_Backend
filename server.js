@@ -64,6 +64,9 @@ process.on("unhandledRejection", (err) => {
 // DATABASE CONNECTION
 // ======================================================
 
+const DB_RETRY_MS = Number(process.env.DB_RETRY_MS || 10000);
+let dbRetryTimer = null;
+
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI);
@@ -73,13 +76,22 @@ const connectDB = async () => {
     console.log("HOST:", conn.connection.host);
     console.log("DATABASE:", conn.connection.name);
     console.log("====================================");
+    if (dbRetryTimer) {
+      clearTimeout(dbRetryTimer);
+      dbRetryTimer = null;
+    }
   } catch (error) {
     console.error("====================================");
     console.error("❌ MongoDB Connection Failed");
     console.error(error.message);
     console.error("====================================");
-
-    process.exit(1);
+    if (!dbRetryTimer) {
+      dbRetryTimer = setTimeout(async () => {
+        dbRetryTimer = null;
+        await connectDB();
+      }, DB_RETRY_MS);
+      console.log(`🔁 Retrying DB connection in ${DB_RETRY_MS / 1000}s...`);
+    }
   }
 };
 
