@@ -34,7 +34,7 @@ export const uploadDocument = async (req, res, next) => {
     }
 
     // Local file URL
-    const baseURL = `${process.env.BASE_URL}${process.env.PORT}`;
+    const baseURL = `${process.env.BASE_URL}`;
     const fileURL = `${baseURL}/uploads/documents/${req.file.filename}`;
 
     // Upload to Cloudinary as well
