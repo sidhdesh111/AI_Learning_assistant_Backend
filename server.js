@@ -30,8 +30,8 @@ connectDB();
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      frameAncestors: [process.env.CLIENT_URL || "http://localhost:5173", "'self'"],
-      frameSrc: [process.env.CLIENT_URL || "http://localhost:5173", "'self'", "blob:"],
+      frameAncestors: [process.env.CLIENT_URL || "https://ailearning.naranexus.com", "'self'"],
+      frameSrc: [process.env.CLIENT_URL || "https://ailearning.naranexus.com", "'self'", "blob:"],
     },
   },
 }));
