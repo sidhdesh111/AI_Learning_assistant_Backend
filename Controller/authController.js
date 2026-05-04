@@ -32,18 +32,20 @@ const generateTokenPair = (user, tokenVersion = 1) => {
 const setTokenCookies = (res, accessToken, refreshToken, remember = false) => {
     const accessMaxAge = 15 * 60 * 1000; // 15 minutes
     const refreshMaxAge = remember ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000; // 30 days or 7 days
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax"
+    };
 
     res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // true in production (HTTPS)
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: accessMaxAge
     });
 
     res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        ...cookieOptions,
         maxAge: refreshMaxAge
     });
 };
@@ -52,15 +54,18 @@ const setTokenCookies = (res, accessToken, refreshToken, remember = false) => {
  * Clear token cookies
  */
 const clearTokenCookies = (res) => {
-    res.clearCookie("accessToken", {
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict"
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax"
+    };
+
+    res.clearCookie("accessToken", {
+        ...cookieOptions
     });
     res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict"
+        ...cookieOptions
     });
 };
 
