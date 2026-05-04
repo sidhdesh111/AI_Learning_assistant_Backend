@@ -45,6 +45,9 @@ console.log("====================================");
 // ======================================================
 
 const app = express();
+// Hostinger and other managed platforms run Express behind a reverse proxy.
+// This enables correct client IP detection (needed by express-rate-limit).
+app.set("trust proxy", 1);
 
 // ======================================================
 // GLOBAL ERROR LOGGING
