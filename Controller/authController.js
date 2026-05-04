@@ -144,6 +144,7 @@ export const loginController = async (req, res) => {
         return res.status(400).json({
             success: false,
             errors: errors.array(),
+            message: "Validation failed",
             statusCode: 400
         });
     }
@@ -154,6 +155,7 @@ export const loginController = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Invalid email or password",
+                errors: [{ msg: "Invalid email or password", param: "email" }],
                 statusCode: 400
             });
         }
@@ -163,6 +165,7 @@ export const loginController = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Invalid email or password",
+                errors: [{ msg: "Invalid email or password", param: "password" }],
                 statusCode: 400
             });
         }
@@ -213,6 +216,7 @@ export const loginController = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Server Error",
+            errors: [{ msg: error.message || "Server Error" }],
             statusCode: 500
         });
     }
