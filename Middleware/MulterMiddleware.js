@@ -1,15 +1,31 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 export const createUpload = (folderName = "") => {
-    const uploadPath = path.join("uploads", folderName);
+    const isServerless = !!process.env.VERCEL;
+    const baseUploadDir = isServerless
+        ? path.join(os.tmpdir(), "uploads")
+        : path.join(process.cwd(), "uploads");
+    const uploadPath = path.join(baseUploadDir, folderName);
 
-    // Ensure directory exists
-    fs.mkdirSync(uploadPath, { recursive: true });
+    const ensureUploadDir = () => {
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+    };
+
+    // Ensure directory exists at startup (safe in local and serverless temp dir).
+    ensureUploadDir();
 
     const storage = multer.diskStorage({
         destination: function (req, file, cb) {
+            try {
+                ensureUploadDir();
+            } catch (error) {
+                return cb(error);
+            }
             cb(null, uploadPath);
         },
         filename: function (req, file, cb) {
