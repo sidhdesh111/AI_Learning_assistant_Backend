@@ -28,8 +28,10 @@ const scheduleReconnect = (attempt = 1) => {
 };
 
 export const connectDB = async (attempt = 1) => {
-  if (!process.env.MONGO_URL) {
-    console.error("❌ MONGO_URL is missing. DB connection skipped.");
+  const mongoUri = process.env.MONGO_URL || process.env.MONGO_URL;
+
+  if (!mongoUri) {
+    console.error("❌ MONGO_URL/MONGO_URL is missing. DB connection skipped.");
     return;
   }
 
@@ -39,7 +41,7 @@ export const connectDB = async (attempt = 1) => {
   isConnecting = true;
 
   try {
-    await mongoose.connect(process.env.MONGO_URL, {
+    await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       maxPoolSize: 10,
