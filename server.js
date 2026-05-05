@@ -71,6 +71,8 @@ connectDB();
 
 app.use(
   helmet({
+    // Allow the SPA (different origin) to embed PDFs served from this API.
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: {
       directives: {
         frameAncestors: [
@@ -177,7 +179,6 @@ app.use((req, res) => {
     route: req.originalUrl,
   });
 });
-
 // ======================================================
 // ERROR HANDLER
 // ======================================================

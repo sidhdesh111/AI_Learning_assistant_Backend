@@ -2,12 +2,17 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import os from "os";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const createUpload = (folderName = "") => {
     const isServerless = !!process.env.VERCEL;
+    // Match express.static in server.js (Backend/uploads), not process.cwd() — deploy often starts Node from another cwd.
     const baseUploadDir = isServerless
         ? path.join(os.tmpdir(), "uploads")
-        : path.join(process.cwd(), "uploads");
+        : path.join(__dirname, "..", "uploads");
     const uploadPath = path.join(baseUploadDir, folderName);
 
     const ensureUploadDir = () => {
