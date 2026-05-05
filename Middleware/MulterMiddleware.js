@@ -1,18 +1,10 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import os from "os";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { getUploadBaseDir, ensureUploadBaseDir } from "../config/uploadPaths.js";
 
 export const createUpload = (folderName = "") => {
-    const isServerless = !!process.env.VERCEL;
-    // Match express.static in server.js (Backend/uploads), not process.cwd() — deploy often starts Node from another cwd.
-    const baseUploadDir = isServerless
-        ? path.join(os.tmpdir(), "uploads")
-        : path.join(__dirname, "..", "uploads");
+    const baseUploadDir = ensureUploadBaseDir();
     const uploadPath = path.join(baseUploadDir, folderName);
 
     const ensureUploadDir = () => {
@@ -47,12 +39,17 @@ export const createUpload = (folderName = "") => {
     });
 
     const fileFilter = (req, file, cb) => {
-        // Only allow PDF files
-        if (file.mimetype !== "application/pdf") {
-            cb(new Error("Only PDF files are allowed"));
-        } else {
-            cb(null, true);
+        const name = (file.originalname || "").toLowerCase();
+        const type = (file.mimetype || "").toLowerCase();
+        const isPdfName = name.endsWith(".pdf");
+        const isPdfMime =
+            type === "application/pdf" ||
+            type === "application/x-pdf" ||
+            type.includes("pdf");
+        if (isPdfName || isPdfMime) {
+            return cb(null, true);
         }
+        cb(new Error("Only PDF files are allowed"));
     };
 
     return multer({ 

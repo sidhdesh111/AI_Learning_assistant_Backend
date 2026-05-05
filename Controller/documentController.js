@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import { processPDF } from "../config/PDFprocess.js";
 import { deleteFromCloudinary } from "../Middleware/Claudinary.js";
+import { resolveFilePathFromDbUrl } from "../config/uploadPaths.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +38,8 @@ export const uploadDocument = async (req, res, next) => {
     }
 
     const fileURL = `/uploads/documents/${req.file.filename}`;
+
+    console.log("[upload] PDF saved to disk at:", req.file.path);
 
     const document = await DocumentModel.create({
       userId: req.user._id,
@@ -192,11 +195,7 @@ export const streamDocumentFile = async (req, res, next) => {
     }
 
     const fromFilePath = document.filePath
-      ? path.join(
-          __dirname,
-          "..",
-          document.filePath.replace(/^\//, ""),
-        )
+      ? resolveFilePathFromDbUrl(document.filePath)
       : null;
 
     const candidates = [];

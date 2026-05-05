@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 
 import { ErrorHandler } from "./Middleware/errorHandler.js";
 import { connectDB } from "./config/db_connect.js";
+import { getUploadBaseDir, ensureUploadBaseDir } from "./config/uploadPaths.js";
 
 import authrouter from "./Routes/authRoutes.js";
 import documentRouter from "./Routes/documentRoutes.js";
@@ -30,6 +31,9 @@ console.log("====================================");
 console.log("ENV CHECK");
 console.log("PORT:", process.env.PORT);
 console.log("CLIENT_URL:", process.env.CLIENT_URL);
+console.log("UPLOAD_DIR:", process.env.UPLOAD_DIR || "(default Backend/uploads)");
+console.log("UPLOAD_BASE (resolved):", getUploadBaseDir());
+console.log("VERCEL:", process.env.VERCEL ? "set (uploads use temp dir unless UPLOAD_DIR)" : "not set");
 console.log(
   "MONGODB_URL:",
   process.env.MONGO_URL ? "FOUND ✅" : "MISSING ❌"
@@ -76,6 +80,7 @@ process.on("unhandledRejection", (err) => {
 });
 
 connectDB();
+ensureUploadBaseDir();
 
 // ======================================================
 // SECURITY
@@ -153,7 +158,7 @@ app.use(
     );
     next();
   },
-  express.static(path.join(__dirname, "uploads"))
+  express.static(getUploadBaseDir())
 );
 
 // ======================================================
