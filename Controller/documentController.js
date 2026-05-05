@@ -9,10 +9,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import { processPDF } from "../config/PDFprocess.js";
-import {
-  uploadToCloudinary,
-  deleteFromCloudinary,
-} from "../Middleware/Claudinary.js";
+import { deleteFromCloudinary } from "../Middleware/Claudinary.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,18 +36,7 @@ export const uploadDocument = async (req, res, next) => {
       });
     }
 
-    // Relative file URL (frontend will use its own base URL)
     const fileURL = `/uploads/documents/${req.file.filename}`;
-
-    // Upload to Cloudinary as well
-    let cloudinaryURL = null;
-    try {
-      cloudinaryURL = await uploadToCloudinary(req.file.path);
-      console.log("File uploaded to Cloudinary:", cloudinaryURL);
-    } catch (error) {
-      console.error("Error uploading to Cloudinary:", error);
-      // Continue with local storage even if Cloudinary upload fails
-    }
 
     const document = await DocumentModel.create({
       userId: req.user._id,
@@ -58,7 +44,6 @@ export const uploadDocument = async (req, res, next) => {
       fileName: req.file.originalname,
       filePath: fileURL,
       localFilePath: req.file.path,
-      cloudinaryUrl: cloudinaryURL,
       fileSize: req.file.size,
       status: "processing",
     });
@@ -70,8 +55,7 @@ export const uploadDocument = async (req, res, next) => {
     res.status(201).json({
       success: true,
       data: document,
-      message:
-        "Document uploaded Successfully to both local and cloud storage. Processing in progress...",
+      message: "Document uploaded successfully. Processing in progress...",
     });
   } catch (error) {
     if (req.file) {
@@ -197,7 +181,7 @@ export const streamDocumentFile = async (req, res, next) => {
     const document = await DocumentModel.findOne({
       _id: id,
       userId: req.user._id,
-    }).select("cloudinaryUrl localFilePath filePath fileName");
+    }).select("localFilePath filePath fileName");
 
     if (!document) {
       return res.status(404).json({
@@ -205,10 +189,6 @@ export const streamDocumentFile = async (req, res, next) => {
         error: "Document not found",
         statusCode: 404,
       });
-    }
-
-    if (document.cloudinaryUrl) {
-      return res.redirect(302, document.cloudinaryUrl);
     }
 
     const fromFilePath = document.filePath
@@ -245,7 +225,7 @@ export const streamDocumentFile = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message:
-          "PDF file is not on this server. Most hosts clear disk on redeploy—re-upload the document, or set Cloudinary env vars so new uploads are stored in the cloud.",
+          "PDF file is not on this server. If the file was removed or the app was redeployed without a persistent uploads folder, re-upload the document. On production, map a persistent volume to the server’s uploads directory.",
         statusCode: 404,
       });
     }
