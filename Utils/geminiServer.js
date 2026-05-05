@@ -144,7 +144,7 @@ A: [Option A]
 B: [Option B]
 C: [Option C]
 D: [Option D]
-Answer: [Correct Option: A, B, C, or D]
+Answer: [Correct Option: ONLY one of A, B, C, or D]
 
 Separate each question with "---"
 
@@ -173,6 +173,24 @@ ${text.substring(0, 15000)}`;
 
         const qBlocks = generatedText.split("---").filter((q) => q.trim());
 
+        const normalizeAnswerKey = (rawAnswer) => {
+            if (!rawAnswer || typeof rawAnswer !== "string") return null;
+            const cleaned = rawAnswer.trim();
+            const upper = cleaned.toUpperCase();
+
+            // Letter formats: A, A), A., Option A, Answer: A
+            const letterMatch = upper.match(/\b([ABCD])\b/);
+            if (letterMatch) return letterMatch[1];
+
+            // Numeric formats: 1/2/3/4 or 01/02/03/04
+            const numberMatch = upper.match(/\b0?([1-4])\b/);
+            if (numberMatch) {
+                return ["A", "B", "C", "D"][Number(numberMatch[1]) - 1];
+            }
+
+            return null;
+        };
+
         for (const block of qBlocks) {
             const lines = block.trim().split("\n");
             let question = "",
@@ -194,14 +212,16 @@ ${text.substring(0, 15000)}`;
                 }
             }
 
-            if (question && Object.keys(optionsObj).length === 4 && correctAnswer) {
+            const normalizedAnswerKey = normalizeAnswerKey(correctAnswer);
+
+            if (question && Object.keys(optionsObj).length === 4 && normalizedAnswerKey) {
                 // Convert options object to array: [A, B, C, D]
                 const optionsArray = [optionsObj.A, optionsObj.B, optionsObj.C, optionsObj.D];
                 
                 questions.push({
                     question,
                     options: optionsArray,
-                    correctAnswer: optionsObj[correctAnswer] || correctAnswer,
+                    correctAnswer: optionsObj[normalizedAnswerKey],
                 });
             }
         }
