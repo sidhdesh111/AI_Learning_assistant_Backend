@@ -56,9 +56,16 @@ export const submitQuiz = async (req, res, next) => {
         const userAnswers = [];
 
         answers.forEach((answer) => {
-            const { questionIndex, selectedOption } = answer;
+            const questionIndex = Number(answer?.questionIndex);
+            const selectedOption = answer?.selectedOption ?? answer?.selectedAnswer;
 
-            if (questionIndex >= 0 && questionIndex < quiz.questions.length) {
+            if (
+                Number.isInteger(questionIndex) &&
+                questionIndex >= 0 &&
+                questionIndex < quiz.questions.length &&
+                typeof selectedOption === "string" &&
+                selectedOption.trim().length > 0
+            ) {
                 const question = quiz.questions[questionIndex];
                 const isCorrect = question.correctAnswer === selectedOption;
 
@@ -66,12 +73,20 @@ export const submitQuiz = async (req, res, next) => {
 
                 userAnswers.push({
                     questionIndex,
-                    selectedOption,
+                    selectedOption: selectedOption.trim(),
                     isCorrect,
                     answeredAt: new Date(),
                 });
             }
         });
+
+        if (userAnswers.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Each answer must include questionIndex and selectedOption",
+                statusCode: 400,
+            });
+        }
 
         const score = Math.round((correctCount / quiz.questions.length) * 100);
 
@@ -153,7 +168,7 @@ export const getQuizResults = async (req, res, next) => {
                 question: question.question,
                 options: question.options,
                 correctAnswer: question.correctAnswer,
-                selectedAnswer: userAnswer ? userAnswer.selectedAnswer : null,
+                selectedAnswer: userAnswer ? userAnswer.selectedOption : null,
                 isCorrect: userAnswer ? userAnswer.isCorrect : false,
                 explanation: question.explanation || null,
             };
