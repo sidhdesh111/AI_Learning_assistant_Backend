@@ -239,6 +239,15 @@ export const refreshTokenController = async (req, res) => {
     // Accept refresh token from secure cookie only
     const incomingRefreshToken = req.cookies?.refreshToken;
 
+    if (!isDatabaseReady()) {
+        clearTokenCookies(res);
+        return res.status(503).json({
+            success: false,
+            message: "Database temporarily unavailable. Please try again.",
+            statusCode: 503
+        });
+    }
+
     if (!incomingRefreshToken) {
         return res.status(401).json({
             success: false,
@@ -253,6 +262,7 @@ export const refreshTokenController = async (req, res) => {
         try {
             decoded = verifyToken(incomingRefreshToken, "refresh");
         } catch (err) {
+            clearTokenCookies(res);
             return res.status(401).json({
                 success: false,
                 message: "Invalid or expired refresh token",
@@ -261,9 +271,12 @@ export const refreshTokenController = async (req, res) => {
         }
 
         const { userId, tokenVersion } = decoded;
-        const user = await UserModel.findById(userId);
+        const user = await UserModel.findById(userId)
+            .select("_id email accessToken refreshToken tokenVersion isLoggedOut lastRefresh")
+            .exec();
 
         if (!user) {
+            clearTokenCookies(res);
             return res.status(401).json({
                 success: false,
                 message: "User not found",
@@ -273,6 +286,7 @@ export const refreshTokenController = async (req, res) => {
 
         // Check if user is logged out
         if (user.isLoggedOut) {
+            clearTokenCookies(res);
             return res.status(401).json({
                 success: false,
                 message: "User has been logged out. Please login again.",
@@ -291,6 +305,7 @@ export const refreshTokenController = async (req, res) => {
             user.accessToken = null;
             await user.save();
 
+            clearTokenCookies(res);
             return res.status(401).json({
                 success: false,
                 message: "Token validation failed. Please login again.",
@@ -300,6 +315,7 @@ export const refreshTokenController = async (req, res) => {
 
         // Check token version matches
         if (user.tokenVersion !== tokenVersion) {
+            clearTokenCookies(res);
             return res.status(401).json({
                 success: false,
                 message: "Token has been rotated. Please login again.",
@@ -334,7 +350,7 @@ export const refreshTokenController = async (req, res) => {
         console.error("Token refresh error:", error);
         return res.status(500).json({
             success: false,
-            message: error.message || "Server Error",
+            message: "Unable to refresh token right now. Please login again.",
             statusCode: 500
         });
     }
