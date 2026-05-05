@@ -49,6 +49,18 @@ const app = express();
 // This enables correct client IP detection (needed by express-rate-limit).
 app.set("trust proxy", 1);
 
+// Fix URLs like https://host//uploads/... (double slash after host) so static + API routes match.
+app.use((req, _res, next) => {
+  if (typeof req.url !== "string" || !req.url.startsWith("//")) {
+    return next();
+  }
+  const qIndex = req.url.indexOf("?");
+  const pathOnly = qIndex === -1 ? req.url : req.url.slice(0, qIndex);
+  const query = qIndex === -1 ? "" : req.url.slice(qIndex);
+  req.url = `/${pathOnly.replace(/^\/+/u, "")}${query}`;
+  next();
+});
+
 // ======================================================
 // GLOBAL ERROR LOGGING
 // ======================================================
