@@ -1,7 +1,13 @@
 import express from "express";
 import { createUpload } from "../Middleware/MulterMiddleware.js";
 import { protectedMiddleware } from "../Middleware/auth.js";
-import { deleteDocument, getAllDocuments, getSingleDocuments, uploadDocument } from "../Controller/documentController.js";
+import {
+  deleteDocument,
+  getAllDocuments,
+  getSingleDocuments,
+  streamDocumentFile,
+  uploadDocument,
+} from "../Controller/documentController.js";
 
 const documentRouter = express.Router();
 
@@ -30,6 +36,7 @@ documentRouter.post('/upload', protectedMiddleware, (req, res, next) => {
 }, uploadDocument);
 
 documentRouter.get('/', protectedMiddleware, getAllDocuments);
+documentRouter.get('/:id/file', protectedMiddleware, streamDocumentFile);
 documentRouter.get('/:id', protectedMiddleware, getSingleDocuments);
 documentRouter.delete('/:id', protectedMiddleware, deleteDocument);
 

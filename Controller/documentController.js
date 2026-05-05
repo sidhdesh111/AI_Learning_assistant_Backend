@@ -4,12 +4,18 @@ import QuizModel from "../Model/Quiz.Model.js";
 import { extractTextFromPDF } from "../Utils/pdfParser.js";
 import { chunkText } from "../Utils/textChunker.js";
 import fs from "fs/promises";
+import { createReadStream } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import { processPDF } from "../config/PDFprocess.js";
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
 } from "../Middleware/Claudinary.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const uploadDocument = async (req, res, next) => {
   try {
@@ -168,6 +174,81 @@ export const getSingleDocuments = async (req, res, next) => {
     });
   } catch (error) {
     console.log(`Error is Getting Document ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * Stream or redirect to the PDF so the SPA can load it with Authorization (blob)
+ * without relying on public /uploads on the API host (often blocked or wrong origin in prod).
+ */
+export const streamDocumentFile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid document id",
+        statusCode: 400,
+      });
+    }
+
+    const document = await DocumentModel.findOne({
+      _id: id,
+      userId: req.user._id,
+    }).select("cloudinaryUrl localFilePath filePath fileName");
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        error: "Document not found",
+        statusCode: 404,
+      });
+    }
+
+    if (document.cloudinaryUrl) {
+      return res.redirect(302, document.cloudinaryUrl);
+    }
+
+    let absolutePath = document.localFilePath;
+    if (!absolutePath && document.filePath) {
+      absolutePath = path.join(
+        __dirname,
+        "..",
+        document.filePath.replace(/^\//, ""),
+      );
+    }
+
+    if (!absolutePath) {
+      return res.status(404).json({
+        success: false,
+        message: "File not available",
+        statusCode: 404,
+      });
+    }
+
+    try {
+      await fs.access(absolutePath);
+    } catch {
+      return res.status(404).json({
+        success: false,
+        message: "File not found on server",
+        statusCode: 404,
+      });
+    }
+
+    const downloadName = document.fileName || "document.pdf";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${encodeURIComponent(downloadName)}"`,
+    );
+
+    const stream = createReadStream(absolutePath);
+    stream.on("error", (err) => next(err));
+    stream.pipe(res);
+  } catch (error) {
     next(error);
   }
 };
