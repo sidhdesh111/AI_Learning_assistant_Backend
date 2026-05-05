@@ -191,6 +191,15 @@ ${text.substring(0, 15000)}`;
             return null;
         };
 
+        const shuffleOptions = (options) => {
+            const shuffled = [...options];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        };
+
         for (const block of qBlocks) {
             const lines = block.trim().split("\n");
             let question = "",
@@ -217,11 +226,14 @@ ${text.substring(0, 15000)}`;
             if (question && Object.keys(optionsObj).length === 4 && normalizedAnswerKey) {
                 // Convert options object to array: [A, B, C, D]
                 const optionsArray = [optionsObj.A, optionsObj.B, optionsObj.C, optionsObj.D];
+                const correctAnswerText = optionsObj[normalizedAnswerKey];
+                const shuffledOptions = shuffleOptions(optionsArray);
                 
                 questions.push({
                     question,
-                    options: optionsArray,
-                    correctAnswer: optionsObj[normalizedAnswerKey],
+                    options: shuffledOptions,
+                    // Store correct answer as text so scoring stays correct after shuffle.
+                    correctAnswer: correctAnswerText,
                 });
             }
         }
