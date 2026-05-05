@@ -211,29 +211,41 @@ export const streamDocumentFile = async (req, res, next) => {
       return res.redirect(302, document.cloudinaryUrl);
     }
 
-    let absolutePath = document.localFilePath;
-    if (!absolutePath && document.filePath) {
-      absolutePath = path.join(
-        __dirname,
-        "..",
-        document.filePath.replace(/^\//, ""),
-      );
+    const fromFilePath = document.filePath
+      ? path.join(
+          __dirname,
+          "..",
+          document.filePath.replace(/^\//, ""),
+        )
+      : null;
+
+    const candidates = [];
+    if (document.localFilePath) {
+      candidates.push(document.localFilePath);
+    }
+    if (fromFilePath) {
+      candidates.push(fromFilePath);
+    }
+
+    let absolutePath = null;
+    for (const p of candidates) {
+      if (!p) {
+        continue;
+      }
+      try {
+        await fs.access(p);
+        absolutePath = p;
+        break;
+      } catch {
+        // try next (e.g. localFilePath from another machine/OS, or disk wiped after deploy)
+      }
     }
 
     if (!absolutePath) {
       return res.status(404).json({
         success: false,
-        message: "File not available",
-        statusCode: 404,
-      });
-    }
-
-    try {
-      await fs.access(absolutePath);
-    } catch {
-      return res.status(404).json({
-        success: false,
-        message: "File not found on server",
+        message:
+          "PDF file is not on this server. Most hosts clear disk on redeploy—re-upload the document, or set Cloudinary env vars so new uploads are stored in the cloud.",
         statusCode: 404,
       });
     }
